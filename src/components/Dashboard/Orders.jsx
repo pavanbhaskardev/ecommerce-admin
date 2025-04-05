@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 const orders = [
   { 
@@ -164,7 +165,7 @@ export default function Orders() {
   };
 
   return (
-    <div className="p-6 ">
+    <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Orders</h1>
@@ -185,7 +186,6 @@ export default function Orders() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700/50 border-y dark:border-gray-700">
@@ -232,9 +232,8 @@ export default function Orders() {
             </thead>
             <tbody className="divide-y dark:divide-gray-700">
               {filteredOrders.map((order) => (
-                <>
+                <React.Fragment key={order.id}>
                   <tr 
-                    key={order.id} 
                     className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                     onClick={() => toggleOrderDetails(order.id)}
                   >
@@ -268,14 +267,14 @@ export default function Orders() {
                     </td>
                   </tr>
                   {expandedOrder === order.id && (
-                    <tr>
+                    <tr key={`${order.id}-expanded`}>
                       <td colSpan="6" className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4">
                         <div className="grid grid-cols-3 gap-6">
                           <div>
                             <h3 className="font-medium text-gray-900 dark:text-white mb-2">Order Items</h3>
                             <div className="space-y-2">
                               {order.items.map((item, index) => (
-                                <div key={index} className="flex justify-between text-sm">
+                                <div key={`${order.id}-item-${index}`} className="flex justify-between text-sm">
                                   <span className="dark:text-gray-300">{item.name} × {item.quantity}</span>
                                   <span className="text-gray-600 dark:text-gray-400">${(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
@@ -313,7 +312,7 @@ export default function Orders() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer";
 import { cn } from "@/lib/utils";
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -23,26 +24,28 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <body
-            className= {cn(
-              "max-h-screen bg-background font-sans antialiased",
-              geistSans.variable,
-              geistMono.variable
-            )}
+    <html>
+      <head />
+      <body
+        className={cn(
+          "max-h-screen bg-background font-sans antialiased",
+          geistSans.variable,
+          geistMono.variable
+        )}
+      >
+        <ClerkProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
           >
             <Navbar />
             {children}
-          </body>
-        </ThemeProvider>
-      </html>
-    </ClerkProvider>
+            {/* <Footer /> */}
+          </ThemeProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

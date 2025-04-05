@@ -170,7 +170,7 @@ export default function Navbar() {
             {/* Desktop Navbar */}
             <div className="hidden sm:flex w-full items-center justify-between">
               <NavItems />
-              <h1 className="text-xl font-bold tracking-tight">NexMerch</h1>
+              <h1 className="text-xl font-bold tracking-tight"> myAngadi </h1>
               <div className="flex items-center gap-2">
                 <ModeToggle />
                 <SignedIn>

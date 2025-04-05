@@ -13,10 +13,13 @@ export default function Home() {
   // If user is not logged in, show the home page with banner and login prompt
 
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden ">
         <Banner />
         <Separator />
-        {session ? <Stats /> : <ShowLogin />}
+
+        <div className=" max-w-7xl mx-auto  overflow-auto ">
+          {session ? <Stats /> : <ShowLogin />}
+        </div>
       </div>
     );
 
