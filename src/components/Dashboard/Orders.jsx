@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import React from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const orders = [
   { 
@@ -129,50 +130,125 @@ const StatusBadge = ({ status }) => {
 };
 
 export default function Orders() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "date", direction: "desc" });
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const searchParams = new URLSearchParams({
+        page: pagination.page,
+        limit: pagination.limit,
+        search: searchTerm,
+        sortField: sortConfig.key,
+        sortOrder: sortConfig.direction
+      });
+
+      const response = await fetch(`/api/orders?${searchParams}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch orders');
+      }
+
+      setOrders(data.orders);
+      setPagination(prev => ({
+        ...prev,
+        total: data.pagination.total,
+        totalPages: data.pagination.totalPages
+      }));
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [pagination.page, sortConfig, searchTerm]);
 
   const handleSort = (key) => {
-    setSortConfig((prev) => ({
+    setSortConfig(prev => ({
       key,
       direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
   };
 
-  const sortedOrders = [...orders].sort((a, b) => {
-    if (sortConfig.direction === "asc") {
-      return a[sortConfig.key] > b[sortConfig.key] ? 1 : -1;
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update order status');
+      }
+
+      // Update the order in the local state
+      setOrders(prev => prev.map(order => 
+        order.orderId === orderId ? { ...order, status: newStatus } : order
+      ));
+
+      toast({
+        title: "Success",
+        description: "Order status updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
     }
-    return a[sortConfig.key] < b[sortConfig.key] ? 1 : -1;
-  });
-
-  const filteredOrders = sortedOrders.filter((order) =>
-    Object.values(order).some((value) =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
-
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) return <ChevronDown className="w-4 h-4 text-gray-400" />;
-    return sortConfig.direction === "asc" ? 
-      <ChevronUp className="w-4 h-4" /> : 
-      <ChevronDown className="w-4 h-4" />;
   };
 
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) return <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />;
+    return sortConfig.direction === "asc" ? 
+      <ChevronUp className="w-4 h-4" /> : 
+      <ChevronDown className="w-4 h-4" />;
+  };
+
+  if (loading) {
+    return <div className="p-6 text-center">Loading orders...</div>;
+  }
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
+        <div className="hidden lg:block">
           <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-gray-500 dark:text-gray-400 lg:block hidden">View and manage all customer orders</p>
+          <p className="text-gray-500 dark:text-gray-400 lg:block hidden">
+            View and manage all customer orders
+          </p>
         </div>
-        <div className="flex gap-4">
-          <div className="relative">
+        <div className="flex gap-4 ">
+          <div className="relative flex-row flex gap-2 justify-between lg:justify-start items-center">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
             <Input
               type="text"
@@ -181,6 +257,11 @@ export default function Orders() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 w-[300px]"
             />
+            {/* Create new order button */}
+            <Button variant="outline" >
+              <Plus className="w-4 h-4" />
+              <span className="hidden lg:block">Create new order</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -231,7 +312,7 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-gray-700">
-              {filteredOrders.map((order) => (
+              {orders.map((order) => (
                 <React.Fragment key={order.id}>
                   <tr 
                     className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
@@ -316,6 +397,31 @@ export default function Orders() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="p-4 border-t dark:border-gray-700 flex justify-between items-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} orders
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page === 1}
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page === pagination.totalPages}
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     </div>

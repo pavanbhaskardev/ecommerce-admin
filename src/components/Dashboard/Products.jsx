@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -52,79 +52,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useMediaQuery } from "@/hooks/use-media-query";
-
-// Sample product data
-const sampleProducts = [
-  {
-    id: "PRD-1001",
-    name: "Premium Headphones",
-    description: "High-quality wireless headphones with noise cancellation",
-    price: 199.99,
-    stock: 45,
-    discount: 10,
-    category: "Electronics",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-  },
-  {
-    id: "PRD-1002",
-    name: "Smart Watch",
-    description: "Feature-rich smartwatch with health tracking",
-    price: 299.99,
-    stock: 30,
-    discount: 0,
-    category: "Electronics",
-    image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-  },
-  {
-    id: "PRD-1003",
-    name: "Wireless Mouse",
-    description: "Ergonomic wireless mouse for comfortable use",
-    price: 49.99,
-    stock: 100,
-    discount: 5,
-    category: "Accessories",
-    image: "https://images.unsplash.com/photo-1527814050087-3793815479db?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-  },
-  {
-    id: "PRD-1004",
-    name: "Mechanical Keyboard",
-    description: "RGB mechanical keyboard with customizable switches",
-    price: 129.99,
-    stock: 25,
-    discount: 15,
-    category: "Accessories",
-    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-  },
-  {
-    id: "PRD-1005",
-    name: "4K Monitor",
-    description: "27-inch 4K monitor with HDR support",
-    price: 399.99,
-    stock: 15,
-    discount: 0,
-    category: "Electronics",
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-  }
-];
+import { useToast } from "@/hooks/use-toast";
 
 // Product form component
 const ProductForm = ({ product, onSave, onCancel }) => {
   const [formData, setFormData] = useState(product || {
-    id: "",
     name: "",
     description: "",
     price: 0,
     stock: 0,
     discount: 0,
     category: "",
-    image: ""
+    image: "",
+    featured: false
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
 
@@ -225,7 +172,12 @@ const ProductForm = ({ product, onSave, onCancel }) => {
       </div>
       
       <div className="flex items-center space-x-2">
-        <Switch id="featured" />
+        <Switch 
+          id="featured" 
+          name="featured"
+          checked={formData.featured}
+          onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+        />
         <Label htmlFor="featured">Featured Product</Label>
       </div>
       
@@ -243,14 +195,33 @@ const ProductForm = ({ product, onSave, onCancel }) => {
 
 export default function Products() {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [products, setProducts] = useState(sampleProducts);
+  const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { toast } = useToast();
 
   const side = isMobile ? "bottom" : "right";
 
+  // Fetch products
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products');
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch products",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Filter products based on search term
   const filteredProducts = products.filter(product => 
@@ -259,25 +230,77 @@ export default function Products() {
   );
 
   // Handle product save
-  const handleSaveProduct = (productData) => {
-    if (selectedProduct) {
-      // Update existing product
-      setProducts(products.map(p => 
-        p.id === selectedProduct.id ? { ...productData, id: p.id } : p
-      ));
-    } else {
-      // Add new product
-      const newId = `PRD-${1000 + products.length + 1}`;
-      setProducts([...products, { ...productData, id: newId }]);
+  const handleSaveProduct = async (productData) => {
+    try {
+      if (selectedProduct) {
+        // Update existing product
+        const response = await fetch(`/api/products/${selectedProduct._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(productData),
+        });
+
+        if (!response.ok) throw new Error('Failed to update product');
+        
+        toast({
+          title: "Success",
+          description: "Product updated successfully",
+        });
+      } else {
+        // Add new product
+        const response = await fetch('/api/products', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(productData),
+        });
+
+        if (!response.ok) throw new Error('Failed to create product');
+        
+        toast({
+          title: "Success",
+          description: "Product created successfully",
+        });
+      }
+
+      fetchProducts();
+      setIsDrawerOpen(false);
+      setSelectedProduct(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-    setIsDrawerOpen(false);
-    setSelectedProduct(null);
   };
 
   // Handle product delete
-  const handleDeleteProduct = (productId) => {
+  const handleDeleteProduct = async (productId) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter(p => p.id !== productId));
+      try {
+        const response = await fetch(`/api/products/${productId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) throw new Error('Failed to delete product');
+
+        toast({
+          title: "Success",
+          description: "Product deleted successfully",
+        });
+
+        fetchProducts();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -347,7 +370,7 @@ export default function Products() {
       {viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden">
+            <Card key={product._id} className="overflow-hidden">
               <div className="aspect-square relative">
                 <img 
                   src={product.image} 
@@ -392,7 +415,7 @@ export default function Products() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => handleDeleteProduct(product.id)}
+                  onClick={() => handleDeleteProduct(product._id)}
                 >
                   <Trash className="h-4 w-4" />
                 </Button>
@@ -420,7 +443,7 @@ export default function Products() {
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
+                  <TableRow key={product._id}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 rounded-md overflow-hidden">
@@ -460,7 +483,7 @@ export default function Products() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => handleDeleteProduct(product.id)}
+                          onClick={() => handleDeleteProduct(product._id)}
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
