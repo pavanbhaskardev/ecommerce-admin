@@ -195,7 +195,7 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
               <SelectContent>
                 <SelectGroup>
                   {user.emailAddresses.map((emailDetails) => (
-                    <SelectItem value={emailDetails.emailAddress}>
+                    <SelectItem value={emailDetails.emailAddress} key={emailDetails.emailAddress}>
                       {emailDetails.emailAddress}
                     </SelectItem>
                   ))}
@@ -211,7 +211,6 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
             <ScrollArea className="border-input h-64 space-y-4 rounded-md border">
               {fetchingProducts ? (
                 <p
-                  isDisabled
                   className="data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-focus-visible:border-ring data-focus-visible:ring-ring/50 relative rounded px-2 py-1.5 outline-none data-disabled:cursor-not-allowed data-disabled:opacity-50 data-focus-visible:ring-[3px]"
                 >
                   Fetching Products...
@@ -221,139 +220,79 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
               <div className="pb-8 space-y-4">
                 {products.length && !fetchingProducts
                   ? products.map((product) => {
-                      const item = formData.items.find(
-                        (item) => item.name === product.name
-                      );
+                    const item = formData.items.find(
+                      (item) => item.name === product.name
+                    );
 
-                      return (
-                        <div className="flex w-full gap-4 px-4">
-                          <div className="relative flex-shrink-0 size-40 bg-gray-700 rounded-md overflow-hidden">
-                            <Image
-                              src={product.image}
-                              fill
-                              className="object-cover"
-                              alt={`${product.name}-image`}
-                            />
+                    return (
+                      <div className="flex w-full gap-4 px-4">
+                        <div className="relative flex-shrink-0 size-40 bg-gray-700 rounded-md overflow-hidden">
+                          <Image
+                            src={product.image}
+                            fill
+                            className="object-cover"
+                            alt={`${product.name}-image`}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="font-semibold">{product.name}</p>
+
+                          <p className="text-sm text-muted-foreground">
+                            {product.description}
+                          </p>
+
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center">
+                              <DollarSign className="h-4 w-4 mr-1" />
+                              <span className="font-bold">
+                                {product.price.toFixed(2)}
+                              </span>
+                            </div>
+
+                            {product.discount > 0 && (
+                              <Badge variant="destructive">
+                                <Percent className="h-3 w-3 mr-1" />
+                                {product.discount}% OFF
+                              </Badge>
+                            )}
                           </div>
 
-                          <div className="space-y-1">
-                            <p className="font-semibold">{product.name}</p>
+                          <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                            {product.stock > 0 ? (
+                              <>
+                                <Box className="h-4 w-4 mr-1" />
+                                <span>{product.stock} in stock</span>
+                              </>
+                            ) : (
+                              <span>out of stock</span>
+                            )}
+                          </div>
 
-                            <p className="text-sm text-muted-foreground">
-                              {product.description}
-                            </p>
+                          <div className="flex items-center gap-3 pt-2">
+                            <Button
+                              size="icon"
+                              type="button"
+                              disabled={product.stock === 0}
+                              variant="outline"
+                              onClick={() => {
+                                setFormData((current) => {
+                                  const previousItems = current.items;
 
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center">
-                                <DollarSign className="h-4 w-4 mr-1" />
-                                <span className="font-bold">
-                                  {product.price.toFixed(2)}
-                                </span>
-                              </div>
+                                  // checking if item is already exists or not
+                                  const existingItemIndex =
+                                    previousItems.findIndex(
+                                      (item) => item.name === product.name
+                                    );
 
-                              {product.discount > 0 && (
-                                <Badge variant="destructive">
-                                  <Percent className="h-3 w-3 mr-1" />
-                                  {product.discount}% OFF
-                                </Badge>
-                              )}
-                            </div>
+                                  if (existingItemIndex !== -1) {
+                                    const itemRemoved =
+                                      previousItems[existingItemIndex]
+                                        .quantity -
+                                      1 <=
+                                      0;
 
-                            <div className="flex items-center mt-2 text-sm text-muted-foreground">
-                              {product.stock > 0 ? (
-                                <>
-                                  <Box className="h-4 w-4 mr-1" />
-                                  <span>{product.stock} in stock</span>
-                                </>
-                              ) : (
-                                <span>out of stock</span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-3 pt-2">
-                              <Button
-                                size="icon"
-                                type="button"
-                                disabled={product.stock === 0}
-                                variant="outline"
-                                onClick={() => {
-                                  setFormData((current) => {
-                                    const previousItems = current.items;
-
-                                    // checking if item is already exists or not
-                                    const existingItemIndex =
-                                      previousItems.findIndex(
-                                        (item) => item.name === product.name
-                                      );
-
-                                    if (existingItemIndex !== -1) {
-                                      const itemRemoved =
-                                        previousItems[existingItemIndex]
-                                          .quantity -
-                                          1 <=
-                                        0;
-
-                                      if (itemRemoved) {
-                                        return {
-                                          ...current,
-                                          items: [
-                                            ...previousItems.slice(
-                                              0,
-                                              existingItemIndex
-                                            ),
-                                            ...previousItems.slice(
-                                              existingItemIndex + 1
-                                            ),
-                                          ],
-                                        };
-                                      } else {
-                                        return {
-                                          ...current,
-                                          items: [
-                                            ...previousItems.slice(
-                                              0,
-                                              existingItemIndex
-                                            ),
-                                            {
-                                              ...previousItems[
-                                                existingItemIndex
-                                              ],
-                                              quantity:
-                                                previousItems[existingItemIndex]
-                                                  .quantity - 1,
-                                            },
-                                            ...previousItems.slice(
-                                              existingItemIndex + 1
-                                            ),
-                                          ],
-                                        };
-                                      }
-                                    } else {
-                                      return current;
-                                    }
-                                  });
-                                }}
-                              >
-                                <Minus />
-                              </Button>
-
-                              <p>{item?.quantity ? item.quantity : 0}</p>
-
-                              <Button
-                                size="icon"
-                                disabled={product.stock === 0}
-                                variant="outline"
-                                type="button"
-                                onClick={() => {
-                                  setFormData((current) => {
-                                    const previousItems = current.items;
-
-                                    const existingItemIndex =
-                                      previousItems.findIndex(
-                                        (item) => item.name === product.name
-                                      );
-
-                                    if (existingItemIndex !== -1) {
+                                    if (itemRemoved) {
                                       return {
                                         ...current,
                                         items: [
@@ -361,12 +300,6 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
                                             0,
                                             existingItemIndex
                                           ),
-                                          {
-                                            ...previousItems[existingItemIndex],
-                                            quantity:
-                                              previousItems[existingItemIndex]
-                                                .quantity + 1,
-                                          },
                                           ...previousItems.slice(
                                             existingItemIndex + 1
                                           ),
@@ -376,25 +309,91 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
                                       return {
                                         ...current,
                                         items: [
-                                          ...current.items,
+                                          ...previousItems.slice(
+                                            0,
+                                            existingItemIndex
+                                          ),
                                           {
-                                            name: product.name,
-                                            quantity: 1,
-                                            price: product.price,
+                                            ...previousItems[
+                                            existingItemIndex
+                                            ],
+                                            quantity:
+                                              previousItems[existingItemIndex]
+                                                .quantity - 1,
                                           },
+                                          ...previousItems.slice(
+                                            existingItemIndex + 1
+                                          ),
                                         ],
                                       };
                                     }
-                                  });
-                                }}
-                              >
-                                <Plus />
-                              </Button>
-                            </div>
+                                  } else {
+                                    return current;
+                                  }
+                                });
+                              }}
+                            >
+                              <Minus />
+                            </Button>
+
+                            <p>{item?.quantity ? item.quantity : 0}</p>
+
+                            <Button
+                              size="icon"
+                              disabled={product.stock === 0}
+                              variant="outline"
+                              type="button"
+                              onClick={() => {
+                                setFormData((current) => {
+                                  const previousItems = current.items;
+
+                                  const existingItemIndex =
+                                    previousItems.findIndex(
+                                      (item) => item.name === product.name
+                                    );
+
+                                  if (existingItemIndex !== -1) {
+                                    return {
+                                      ...current,
+                                      items: [
+                                        ...previousItems.slice(
+                                          0,
+                                          existingItemIndex
+                                        ),
+                                        {
+                                          ...previousItems[existingItemIndex],
+                                          quantity:
+                                            previousItems[existingItemIndex]
+                                              .quantity + 1,
+                                        },
+                                        ...previousItems.slice(
+                                          existingItemIndex + 1
+                                        ),
+                                      ],
+                                    };
+                                  } else {
+                                    return {
+                                      ...current,
+                                      items: [
+                                        ...current.items,
+                                        {
+                                          name: product.name,
+                                          quantity: 1,
+                                          price: product.price,
+                                        },
+                                      ],
+                                    };
+                                  }
+                                });
+                              }}
+                            >
+                              <Plus />
+                            </Button>
                           </div>
                         </div>
-                      );
-                    })
+                      </div>
+                    );
+                  })
                   : null}
               </div>
 
@@ -441,7 +440,7 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
               <SelectContent>
                 <SelectGroup>
                   {shippingMethods.map(({ label, value }) => (
-                    <SelectItem value={value}>{label}</SelectItem>
+                    <SelectItem value={value} key={value} >{label}</SelectItem>
                   ))}
                 </SelectGroup>
               </SelectContent>
