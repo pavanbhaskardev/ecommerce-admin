@@ -1,20 +1,18 @@
-import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
+import Navbar from "@/components/Navbar";
+import { cn } from "@/lib/utils";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/footer";
-import { cn } from "@/lib/utils";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+const geist = Geist({
+  subsets: ["latin"],
   variable: "--font-geist-sans",
-  weight: "100 900",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
   variable: "--font-geist-mono",
-  weight: "100 900",
 });
 
 export const metadata = {
@@ -42,11 +40,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html>
+    <html suppressHydrationWarning>
       <body
         className={cn(
           "font-sans antialiased",
-          geistSans.variable,
+          geist.variable,
           geistMono.variable
         )}
       >
@@ -58,7 +56,9 @@ export default function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <Navbar />
-            <main className="mt-16">{children}</main>
+            <main className="py-20 grid w-full max-w-7xl mx-auto min-h-screen overflow-x-hidden px-4">
+              {children}
+            </main>
             {/* <Footer /> */}
           </ThemeProvider>
         </ClerkProvider>

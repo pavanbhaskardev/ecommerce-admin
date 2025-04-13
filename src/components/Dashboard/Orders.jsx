@@ -10,6 +10,7 @@ import {
   Box,
   Percent,
   Minus,
+  Ellipsis,
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
@@ -40,6 +41,15 @@ import {
 import { Textarea } from "../ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 const StatusBadge = ({ status }) => {
   const statusStyles = {
     completed:
@@ -52,7 +62,7 @@ const StatusBadge = ({ status }) => {
   return (
     <span
       className={cn(
-        "px-3 py-1 rounded-full text-sm font-medium capitalize",
+        "px-3 py-1 rounded-full text-sm font-semibold capitalize",
         statusStyles[status]
       )}
     >
@@ -195,7 +205,10 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
               <SelectContent>
                 <SelectGroup>
                   {user.emailAddresses.map((emailDetails) => (
-                    <SelectItem value={emailDetails.emailAddress} key={emailDetails.emailAddress}>
+                    <SelectItem
+                      value={emailDetails.emailAddress}
+                      key={emailDetails.emailAddress}
+                    >
                       {emailDetails.emailAddress}
                     </SelectItem>
                   ))}
@@ -210,9 +223,7 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
 
             <ScrollArea className="border-input h-64 space-y-4 rounded-md border">
               {fetchingProducts ? (
-                <p
-                  className="data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-focus-visible:border-ring data-focus-visible:ring-ring/50 relative rounded px-2 py-1.5 outline-none data-disabled:cursor-not-allowed data-disabled:opacity-50 data-focus-visible:ring-[3px]"
-                >
+                <p className="data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-focus-visible:border-ring data-focus-visible:ring-ring/50 relative rounded px-2 py-1.5 outline-none data-disabled:cursor-not-allowed data-disabled:opacity-50 data-focus-visible:ring-[3px]">
                   Fetching Products...
                 </p>
               ) : null}
@@ -220,79 +231,139 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
               <div className="pb-8 space-y-4">
                 {products.length && !fetchingProducts
                   ? products.map((product) => {
-                    const item = formData.items.find(
-                      (item) => item.name === product.name
-                    );
+                      const item = formData.items.find(
+                        (item) => item.name === product.name
+                      );
 
-                    return (
-                      <div className="flex w-full gap-4 px-4">
-                        <div className="relative flex-shrink-0 size-40 bg-gray-700 rounded-md overflow-hidden">
-                          <Image
-                            src={product.image}
-                            fill
-                            className="object-cover"
-                            alt={`${product.name}-image`}
-                          />
-                        </div>
+                      return (
+                        <div className="flex w-full gap-4 px-4">
+                          <div className="relative flex-shrink-0 size-40 bg-gray-700 rounded-md overflow-hidden">
+                            <Image
+                              src={product.image}
+                              fill
+                              className="object-cover"
+                              alt={`${product.name}-image`}
+                            />
+                          </div>
 
-                        <div className="space-y-1">
-                          <p className="font-semibold">{product.name}</p>
+                          <div className="space-y-1">
+                            <p className="font-semibold">{product.name}</p>
 
-                          <p className="text-sm text-muted-foreground">
-                            {product.description}
-                          </p>
+                            <p className="text-sm text-muted-foreground">
+                              {product.description}
+                            </p>
 
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center">
-                              <DollarSign className="h-4 w-4 mr-1" />
-                              <span className="font-bold">
-                                {product.price.toFixed(2)}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center">
+                                <DollarSign className="h-4 w-4 mr-1" />
+                                <span className="font-bold">
+                                  {product.price.toFixed(2)}
+                                </span>
+                              </div>
+
+                              {product.discount > 0 && (
+                                <Badge variant="destructive">
+                                  <Percent className="h-3 w-3 mr-1" />
+                                  {product.discount}% OFF
+                                </Badge>
+                              )}
                             </div>
 
-                            {product.discount > 0 && (
-                              <Badge variant="destructive">
-                                <Percent className="h-3 w-3 mr-1" />
-                                {product.discount}% OFF
-                              </Badge>
-                            )}
-                          </div>
+                            <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                              {product.stock > 0 ? (
+                                <>
+                                  <Box className="h-4 w-4 mr-1" />
+                                  <span>{product.stock} in stock</span>
+                                </>
+                              ) : (
+                                <span>out of stock</span>
+                              )}
+                            </div>
 
-                          <div className="flex items-center mt-2 text-sm text-muted-foreground">
-                            {product.stock > 0 ? (
-                              <>
-                                <Box className="h-4 w-4 mr-1" />
-                                <span>{product.stock} in stock</span>
-                              </>
-                            ) : (
-                              <span>out of stock</span>
-                            )}
-                          </div>
+                            <div className="flex items-center gap-3 pt-2">
+                              <Button
+                                size="icon"
+                                type="button"
+                                disabled={product.stock === 0}
+                                variant="outline"
+                                onClick={() => {
+                                  setFormData((current) => {
+                                    const previousItems = current.items;
 
-                          <div className="flex items-center gap-3 pt-2">
-                            <Button
-                              size="icon"
-                              type="button"
-                              disabled={product.stock === 0}
-                              variant="outline"
-                              onClick={() => {
-                                setFormData((current) => {
-                                  const previousItems = current.items;
+                                    // checking if item is already exists or not
+                                    const existingItemIndex =
+                                      previousItems.findIndex(
+                                        (item) => item.name === product.name
+                                      );
 
-                                  // checking if item is already exists or not
-                                  const existingItemIndex =
-                                    previousItems.findIndex(
-                                      (item) => item.name === product.name
-                                    );
+                                    if (existingItemIndex !== -1) {
+                                      const itemRemoved =
+                                        previousItems[existingItemIndex]
+                                          .quantity -
+                                          1 <=
+                                        0;
 
-                                  if (existingItemIndex !== -1) {
-                                    const itemRemoved =
-                                      previousItems[existingItemIndex]
-                                        .quantity -
-                                      1 <=
-                                      0;
+                                      if (itemRemoved) {
+                                        return {
+                                          ...current,
+                                          items: [
+                                            ...previousItems.slice(
+                                              0,
+                                              existingItemIndex
+                                            ),
+                                            ...previousItems.slice(
+                                              existingItemIndex + 1
+                                            ),
+                                          ],
+                                        };
+                                      } else {
+                                        return {
+                                          ...current,
+                                          items: [
+                                            ...previousItems.slice(
+                                              0,
+                                              existingItemIndex
+                                            ),
+                                            {
+                                              ...previousItems[
+                                                existingItemIndex
+                                              ],
+                                              quantity:
+                                                previousItems[existingItemIndex]
+                                                  .quantity - 1,
+                                            },
+                                            ...previousItems.slice(
+                                              existingItemIndex + 1
+                                            ),
+                                          ],
+                                        };
+                                      }
+                                    } else {
+                                      return current;
+                                    }
+                                  });
+                                }}
+                              >
+                                <Minus />
+                              </Button>
 
-                                    if (itemRemoved) {
+                              <p>{item?.quantity ? item.quantity : 0}</p>
+
+                              <Button
+                                size="icon"
+                                disabled={product.stock === 0}
+                                variant="outline"
+                                type="button"
+                                onClick={() => {
+                                  setFormData((current) => {
+                                    const previousItems = current.items;
+
+                                    const existingItemIndex =
+                                      previousItems.findIndex(
+                                        (item) => item.name === product.name
+                                      );
+
+                                    if (existingItemIndex !== -1) {
                                       return {
                                         ...current,
                                         items: [
@@ -300,6 +371,12 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
                                             0,
                                             existingItemIndex
                                           ),
+                                          {
+                                            ...previousItems[existingItemIndex],
+                                            quantity:
+                                              previousItems[existingItemIndex]
+                                                .quantity + 1,
+                                          },
                                           ...previousItems.slice(
                                             existingItemIndex + 1
                                           ),
@@ -309,91 +386,25 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
                                       return {
                                         ...current,
                                         items: [
-                                          ...previousItems.slice(
-                                            0,
-                                            existingItemIndex
-                                          ),
+                                          ...current.items,
                                           {
-                                            ...previousItems[
-                                            existingItemIndex
-                                            ],
-                                            quantity:
-                                              previousItems[existingItemIndex]
-                                                .quantity - 1,
+                                            name: product.name,
+                                            quantity: 1,
+                                            price: product.price,
                                           },
-                                          ...previousItems.slice(
-                                            existingItemIndex + 1
-                                          ),
                                         ],
                                       };
                                     }
-                                  } else {
-                                    return current;
-                                  }
-                                });
-                              }}
-                            >
-                              <Minus />
-                            </Button>
-
-                            <p>{item?.quantity ? item.quantity : 0}</p>
-
-                            <Button
-                              size="icon"
-                              disabled={product.stock === 0}
-                              variant="outline"
-                              type="button"
-                              onClick={() => {
-                                setFormData((current) => {
-                                  const previousItems = current.items;
-
-                                  const existingItemIndex =
-                                    previousItems.findIndex(
-                                      (item) => item.name === product.name
-                                    );
-
-                                  if (existingItemIndex !== -1) {
-                                    return {
-                                      ...current,
-                                      items: [
-                                        ...previousItems.slice(
-                                          0,
-                                          existingItemIndex
-                                        ),
-                                        {
-                                          ...previousItems[existingItemIndex],
-                                          quantity:
-                                            previousItems[existingItemIndex]
-                                              .quantity + 1,
-                                        },
-                                        ...previousItems.slice(
-                                          existingItemIndex + 1
-                                        ),
-                                      ],
-                                    };
-                                  } else {
-                                    return {
-                                      ...current,
-                                      items: [
-                                        ...current.items,
-                                        {
-                                          name: product.name,
-                                          quantity: 1,
-                                          price: product.price,
-                                        },
-                                      ],
-                                    };
-                                  }
-                                });
-                              }}
-                            >
-                              <Plus />
-                            </Button>
+                                  });
+                                }}
+                              >
+                                <Plus />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })
                   : null}
               </div>
 
@@ -440,7 +451,9 @@ const OrderForm = ({ operation = "create", order = undefined }) => {
               <SelectContent>
                 <SelectGroup>
                   {shippingMethods.map(({ label, value }) => (
-                    <SelectItem value={value} key={value} >{label}</SelectItem>
+                    <SelectItem value={value} key={value}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectGroup>
               </SelectContent>
@@ -643,45 +656,43 @@ export default function Orders() {
     );
   };
 
-  if (loading) {
-    return <div className="p-6 text-center">Loading orders...</div>;
-  }
-
   console.log({ orders });
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div className="hidden lg:block">
-          <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-gray-500 dark:text-gray-400 lg:block hidden">
+    <section className="space-y-8 w-full">
+      <div className="flex gap-4 flex-col w-full md:flex-row md:justify-between md:items-center">
+        <div>
+          <h3 className="text-2xl font-bold">Orders</h3>
+          <p className="text-muted-foreground">
             View and manage all customer orders
           </p>
         </div>
-        <div className="flex gap-4 ">
-          <div className="relative flex-row flex gap-2 justify-between lg:justify-start items-center">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               type="text"
               placeholder="Search orders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-[300px]"
+              className="pl-10 w-full"
             />
-
-            {/* Create new order button */}
-            <OrderSheet>
-              <Button variant="outline">
-                <Plus className="w-4 h-4" />
-                <span className="hidden lg:block">Create new order</span>
-              </Button>
-            </OrderSheet>
           </div>
+
+          {/* Create new order button */}
+          <OrderSheet>
+            <Button>
+              <Plus className="w-4 h-4" />
+
+              <span className="hidden md:block">Create new order</span>
+            </Button>
+          </OrderSheet>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-        <div className="overflow-x-auto">
+      {/* <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+        <div className="overflow-x-scroll">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700/50 border-y dark:border-gray-700">
               <tr>
@@ -881,7 +892,7 @@ export default function Orders() {
           </table>
         </div>
 
-        {/* Pagination */}
+
         <div className="p-4 border-t dark:border-gray-700 flex justify-between items-center">
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
@@ -911,7 +922,47 @@ export default function Orders() {
             </Button>
           </div>
         </div>
+      </div> */}
+
+      <div className="overflow-x-scroll w-full">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Ordered Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {!loading && orders.length
+              ? orders.map((order) => (
+                  <TableRow key={order?.orderId}>
+                    <TableCell className="p-4">{order?.orderId}</TableCell>
+                    <TableCell className="p-4">
+                      {order?.customer?.name}
+                    </TableCell>
+                    <TableCell className="p-4">{order?.createdAt}</TableCell>
+                    <TableCell className="p-4">
+                      <StatusBadge status={order?.status} />
+                    </TableCell>
+                    <TableCell className="p-4">$ {order?.amount}</TableCell>
+                    <TableCell>
+                      <Button size="icon" variant="outline">
+                        <Ellipsis />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : null}
+          </TableBody>
+        </Table>
       </div>
-    </div>
+
+      {loading && <div className="p-6 text-center">Loading orders...</div>}
+    </section>
   );
 }
