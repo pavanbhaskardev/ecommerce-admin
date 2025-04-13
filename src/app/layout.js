@@ -19,10 +19,12 @@ const geistMono = localFont({
 
 export const metadata = {
   title: "myAngadi",
-  description: "myAngadi is an E-Commerce Admin Dashboard for managing your online store built as a part of after the school academy course",
+  description:
+    "myAngadi is an E-Commerce Admin Dashboard for managing your online store built as a part of after the school academy course",
   openGraph: {
     title: "myAngadi",
-    description: "myAngadi is an E-Commerce Admin Dashboard for managing your online store built as a part of after the school academy course",
+    description:
+      "myAngadi is an E-Commerce Admin Dashboard for managing your online store built as a part of after the school academy course",
     url: "https://ecommerce-admin-zeta-one.vercel.app/", // Replace with your actual URL
     siteName: "myAngadi",
     images: [
@@ -37,18 +39,18 @@ export const metadata = {
     type: "website",
   },
 };
+
 export default function RootLayout({ children }) {
   return (
     <html>
-      <head />
       <body
         className={cn(
-          "max-h-screen bg-background font-sans antialiased",
+          "font-sans antialiased",
           geistSans.variable,
           geistMono.variable
         )}
       >
-        <ClerkProvider>
+        <ClerkProvider afterSignOutUrl="/">
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -56,7 +58,7 @@ export default function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <Navbar />
-            {children}
+            <main className="mt-16">{children}</main>
             {/* <Footer /> */}
           </ThemeProvider>
         </ClerkProvider>
