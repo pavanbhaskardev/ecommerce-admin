@@ -4,7 +4,7 @@ import crypto from "crypto";
 const apiKeySchema = new mongoose.Schema(
   {
     keyHash: { type: String, required: true, unique: true },
-    label: { type: String, required: true },
+    name: { type: String, required: true },
     permission: {
       type: String,
       enum: ["read", "read/write"],

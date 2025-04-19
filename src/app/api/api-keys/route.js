@@ -21,25 +21,37 @@ export async function POST(req) {
     const rawKey = ApiKey.generateKey(); // raw key for client
     const hashedKey = ApiKey.hashKey(rawKey); // store this in DB
 
-    console.log({ rawKey, hashedKey });
-
     // Create new order
     const apiKey = new ApiKey({
       keyHash: hashedKey,
-      label: body.label,
+      name: body.name,
       permission: body.permission,
+      isActive: body.isActive ?? true,
     });
 
     await apiKey.save();
 
     return NextResponse.json(
-      { ...apiKey, originalKey: rawKey },
+      { originalKey: rawKey, ...apiKey._doc },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error creating order:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    await connectDB();
+    const keys = await ApiKey.find({});
+    return NextResponse.json(keys);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch API keys" },
       { status: 500 }
     );
   }
