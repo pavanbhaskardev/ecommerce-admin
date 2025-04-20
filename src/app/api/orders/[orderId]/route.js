@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import connectDB from "@/lib/db";
 import Order from "@/models/order";
+import { validateAPIRequest } from "@/lib/validateAPIRequest";
 
 export async function GET(req, { params }) {
   try {
-    const { userId } = auth();
+    const { userId } = await validateAPIRequest({ headers: req.headers });
+
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
 
     await connectDB();
@@ -33,11 +34,11 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { userId } = await validateAPIRequest({ headers: req.headers });
 
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    }
     await connectDB();
 
     const body = await req.json();
@@ -87,9 +88,10 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { userId } = auth();
+    const { userId } = await validateAPIRequest({ headers: req.headers });
+
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
 
     await connectDB();

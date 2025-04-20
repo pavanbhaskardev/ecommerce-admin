@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import connectDB from "@/lib/db";
 import Order from "@/models/order";
+import { validateAPIRequest } from "@/lib/validateAPIRequest";
 
 export async function GET(req) {
   try {
-    const { userId } = await auth();
+    const { userId } = await validateAPIRequest({ headers: req.headers });
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
 
     await connectDB();
@@ -70,10 +70,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const { userId } = await auth();
+    const { userId } = await validateAPIRequest({ headers: req.headers });
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
 
     await connectDB();

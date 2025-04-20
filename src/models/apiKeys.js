@@ -12,6 +12,7 @@ const apiKeySchema = new mongoose.Schema(
       required: true,
     },
     isActive: { type: Boolean, default: true },
+    userId: { type: String, required: true },
   },
   { timestamps: true }
 );

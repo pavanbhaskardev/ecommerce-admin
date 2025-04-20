@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import { cn } from "@/lib/utils";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const geist = Geist({
@@ -59,6 +60,8 @@ export default function RootLayout({ children }) {
             <main className="py-20 grid w-full max-w-7xl mx-auto min-h-screen overflow-x-hidden px-4">
               {children}
             </main>
+            <Toaster />
+
             {/* <Footer /> */}
           </ThemeProvider>
         </ClerkProvider>
